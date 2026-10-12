@@ -1,0 +1,39 @@
+import React,{useMemo,useState}from'react';import{createRoot}from'react-dom/client';import{Camera,Shield,LockKeyhole,Skull,ChevronRight,Shuffle,Users,Flame,Trophy}from'lucide-react';import'./style.css';
+
+const MAX=10,MIN=3;
+const qs=[
+"Qui ici te connaît le moins bien ?","Quelle est la chose la plus gênante que tu aies faite pour séduire quelqu’un ?","As-tu déjà menti à quelqu’un présent ce soir ?","Qui ici serait le plus dangereux avec ton téléphone déverrouillé ?","Quel est ton plus gros red flag en amour ?","Qui ici te semble le meilleur menteur ?","As-tu déjà eu un crush secret sur un ami ?","Quelle vérité sur toi surprendrait le plus le groupe ?","Avec qui ici partirais-tu spontanément en week-end ?","Quelle est la pire excuse que tu aies utilisée après un date ?"];
+const hot=[
+"Qui ici te trouble le plus ?","As-tu déjà caché une attirance à quelqu’un de proche ?","Qui ici choisirais-tu pour un date sans lendemain ?","Quel type de personne te fait perdre tes moyens ?","As-tu déjà regretté de ne pas avoir tenté ta chance avec quelqu’un ?"];
+const games=["CONFESSION","MENTEUR","UNDERCOVER","QUI DE NOUS ?","DUEL","MAJORITÉ","LE PROCÈS","TÉLÉPATHIE","TRAÎTRE","LA BOMBE"];
+const words=[["Plage","Piscine"],["Vodka","Tequila"],["Netflix","Cinéma"],["Paris","Londres"],["Chat","Chien"]];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function App(){
+ const[screen,setScreen]=useState("home"),[players,setPlayers]=useState([]),[draft,setDraft]=useState(""),[turn,setTurn]=useState(0),[round,setRound]=useState(1),[card,setCard]=useState(null),[level,setLevel]=useState("CHAOS"),[secret,setSecret]=useState("");
+ const current=players[turn];
+ const add=()=>{if(draft.trim()&&players.length<MAX){setPlayers([...players,{name:draft.trim(),photo:null,secret:"",signed:false,score:0}]);setDraft("")}};
+ const photo=e=>{const f=e.target.files?.[0];if(!f)return;const u=URL.createObjectURL(f);setPlayers(p=>p.map((x,i)=>i===turn?{...x,photo:u}:x))};
+ const update=(patch)=>setPlayers(p=>p.map((x,i)=>i===turn?{...x,...patch}:x));
+ const nextSetup=(kind)=>{if(kind==="pact")update({signed:true});if(kind==="secret")update({secret});setSecret("");if(turn<players.length-1)setTurn(turn+1);else{setTurn(0);setScreen(kind==="pact"?"secrets":"game")}};
+ const generate=()=>{let type=pick(games),target=pick(players),pts=100+Math.floor(Math.random()*4)*50,prompt=pick(level==="CHILL"?qs:[...qs,...hot]);
+   if(type==="UNDERCOVER"){const w=pick(words);prompt=`Passez le téléphone. Chacun regarde son mot sans le montrer. Un joueur recevra « ${w[1]} », les autres « ${w[0]} ». Décrivez votre mot puis votez pour l'Undercover.`}
+   if(type==="TRAÎTRE")prompt="Formez deux équipes. Une personne sera secrètement désignée pour saboter son équipe. Après le défi, votez pour démasquer le traître.";
+   if(type==="TÉLÉPATHIE")prompt="Deux joueurs désignés répondent en même temps à une question. Même réponse = jackpot.";
+   setCard({type,target,pts,prompt});setRound(r=>r+1)};
+ const award=(idx,n)=>setPlayers(p=>p.map((x,i)=>i===idx?{...x,score:x.score+n}:x));
+ const sorted=useMemo(()=>[...players].sort((a,b)=>b.score-a.score),[players]);
+ if(screen==="home")return <Page><Logo/><p className="tag">Ce qui se passe ici reste ici.</p><div className="hero"><div><b>3–10 joueurs</b><span>1 téléphone</span></div><div><b>1 secret</b><span>chacun</span></div></div><button onClick={()=>setScreen("players")}>NOUVELLE PARTIE <ChevronRight/></button><small>18+ · Secrets · Bluff · Alliances · Chaos</small></Page>;
+ if(screen==="players")return <Page><Step n="01" t="LE CERCLE"/><h2>Qui joue ce soir ?</h2><div className="chips">{players.map((p,i)=><span key={i}>{p.name}</span>)}</div><div className="input"><input value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Prénom"/><button className="mini" onClick={add}>+</button></div><p>{players.length}/{MAX} joueurs</p><div className="levels">{["CHILL","SECRETS","HOT","CHAOS"].map(x=><button className={level===x?"active ghost":"ghost"} onClick={()=>setLevel(x)}>{x}</button>)}</div><button disabled={players.length<MIN} onClick={()=>{setTurn(0);setScreen("profile")}}>CONTINUER</button></Page>;
+ if(screen==="profile")return <Page><Step n="02" t="IDENTITÉ"/><Avatar p={current}/><h2>{current.name}</h2><p>Ajoute ta photo. Elle apparaîtra dans les votes, duels et classements.</p><label className="upload"><Camera/> PRENDRE / CHOISIR UNE PHOTO<input hidden type="file" accept="image/*" capture="user" onChange={photo}/></label><button onClick={()=>{if(turn<players.length-1)setTurn(turn+1);else{setTurn(0);setScreen("pact")}}}>VALIDER</button></Page>;
+ if(screen==="pact")return <Page><Step n="03" t="LE PACTE"/><Shield size={54}/><h2>{current.name}, lis puis signe.</h2><div className="paper">Ce soir, rien ne sort du cercle. Je respecte les limites des autres, je ne diffuse pas leurs secrets et je sais que ce pacte est symbolique.</div><button onClick={()=>nextSetup("pact")}>JE SIGNE LE PACTE</button><small>{turn+1}/{players.length}</small></Page>;
+ if(screen==="secrets")return <Page><Step n="04" t="LE COFFRE"/><LockKeyhole size={54}/><h2>{current.name}, ton plus gros secret.</h2><p>Choisis quelque chose que tu acceptes de risquer dans le jeu. Évite les informations privées concernant des personnes extérieures.</p><textarea value={secret} onChange={e=>setSecret(e.target.value)} placeholder="Personne ne doit voir ton écran…"/><button disabled={!secret.trim()} onClick={()=>nextSetup("secret")}>SCELLER MON SECRET</button><small>Le secret du dernier pourra être révélé selon les règles annoncées.</small></Page>;
+ if(screen==="game"&&!card)return <Page><div className="top"><span>MANCHE {round}</span><span>{level}</span></div><Shuffle size={64}/><h2>Le jeu choisit la prochaine épreuve.</h2><button onClick={generate}>TIRER UNE CARTE</button><button className="ghost" onClick={()=>setScreen("scores")}>CLASSEMENT</button></Page>;
+ if(screen==="game"&&card)return <Page><div className="top"><span>MANCHE {round-1}</span><span>+{card.pts} PTS</span></div><div className="gamecard"><Flame/><em>{card.type}</em><Avatar p={card.target}/><h2>{card.target.name}</h2><p>{card.prompt}</p></div><h3>Attribuer les points</h3><div className="chips scores">{players.map((p,i)=><button onClick={()=>award(i,card.pts)}>{p.name} +{card.pts}</button>)}</div><button onClick={()=>setCard(null)}>MANCHE SUIVANTE</button><button className="ghost" onClick={()=>setScreen("scores")}>VOIR LE CLASSEMENT</button></Page>;
+ if(screen==="scores"){let loser=sorted[sorted.length-1];return <Page><Trophy size={52}/><h2>CLASSEMENT</h2><div className="board">{sorted.map((p,i)=><div><b>{i+1}. {p.name}</b><span>{p.score} pts</span></div>)}</div><div className="danger"><Skull/><b>{loser?.name} est en danger</b><span>Son secret est actuellement au fond du classement.</span></div><button onClick={()=>setScreen("game")}>REPRENDRE</button><button className="ghost" onClick={()=>setScreen("final")}>TERMINER LA PARTIE</button></Page>}
+ if(screen==="final"){let loser=sorted[sorted.length-1];return <Page><Skull size={64}/><p>DERNIÈRE PLACE</p><Avatar p={loser}/><h1>{loser?.name}</h1><div className="secret"><small>SECRET SCELLÉ</small><p>{loser?.secret}</p></div><h2>La partie est terminée.</h2><div className="board">{sorted.map((p,i)=><div><b>{i+1}. {p.name}</b><span>{p.score}</span></div>)}</div><button onClick={()=>location.reload()}>REVANCHE</button></Page>}
+}
+function Logo(){return <><div className="mark">U</div><h1 className="logo">UNSAID</h1></>}
+function Page({children}){return <main>{children}</main>}
+function Step({n,t}){return <div className="top"><span>{n}</span><span>{t}</span></div>}
+function Avatar({p}){return p?.photo?<img className="avatar" src={p.photo}/>:<div className="avatar fallback">{p?.name?.[0]||"?"}</div>}
+createRoot(document.getElementById("root")).render(<App/>);
