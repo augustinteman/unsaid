@@ -32,3 +32,4 @@ if(screen==="final"){let last=sorted.at(-1);return <Page><Skull size={54}/><smal
 }
 function Page({children}){return <main>{children}</main>}function Top({a,b}){return <div className="top"><span>{a}</span><span>{b}</span></div>}
 createRoot(document.getElementById("root")).render(<App/>);
+// Vercel redeploy trigger 2026-10-12
