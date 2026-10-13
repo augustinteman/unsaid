@@ -1,4 +1,4 @@
-import React,{useMemo,useState}from'react';import{createRoot}from'react-dom/client';import{Eye,Shield,LockKeyhole,Trophy,Skull,ChevronRight,Users,Cards}from'lucide-react';import'./style.css';
+import React,{useMemo,useState}from'react';import{createRoot}from'react-dom/client';import{Eye,Shield,LockKeyhole,Trophy,Skull,ChevronRight,Users,Layers3}from'lucide-react';import'./style.css';
 const pick=a=>a[Math.floor(Math.random()*a.length)],shuffle=a=>[...a].sort(()=>Math.random()-.5);
 const WORDS=[["Plage","Piscine"],["Café","Thé"],["Chat","Chien"],["Pizza","Burger"],["Netflix","Cinéma"],["Avion","Train"],["Mer","Lac"],["Vodka","Tequila"],["Instagram","TikTok"],["Paris","Londres"],["Été","Hiver"],["Foot","Basket"]];
 const TELE=["Un pays où partir demain ?","Un animal ?","Une couleur ?","Une boisson de soirée ?","Une célébrité ?","Une ville ?","Un film culte ?","Un plat ?","Une marque ?","Un métier ?"];
